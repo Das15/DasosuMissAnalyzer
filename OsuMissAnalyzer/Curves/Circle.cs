@@ -14,8 +14,8 @@ namespace ReplayViewer.Curves
             if(this.Points.Count == 3)
             {
                 // essentially we are just drawing a circle between two angles
-                Vector2 center = this.CircleCenter(this.Points[0], this.Points[1], this.Points[2]);
-                float radius = this.Distance(this.Points[0], center);
+                Vector2 center = CircleCenter(this.Points[0], this.Points[1], this.Points[2]);
+                float radius = Distance(this.Points[0], center);
                 // arctangent gives us the angles around the circle that the point is at
                 float start = this.Atan2(this.Points[0] - center);
                 float end = this.Atan2(this.Points[2] - center);

@@ -5,38 +5,37 @@ namespace osuDodgyMomentsFinder
 {
     public class HitFrame
     {
-        public ReplayFrame frame { get; set; }
-        public CircleObject note { get; set; }
-        public Keys key { get; set; }
+        public ReplayFrame Frame { get; set; }
+        public CircleObject Note { get; set; }
+        public Keys Key { get; set; }
 
         private double _perfectness = -1;
-        public double Perfectness { get { return _perfectness > -1 ? _perfectness : calc_perfectness(); } private set { } }
+        public double Perfectness { get { return _perfectness > -1 ? _perfectness : Calc_perfectness(); } private set { } }
 
-        private double calc_perfectness()
+        private double Calc_perfectness()
         {
-            _perfectness = Utils.pixelPerfectHitFactor(frame, note);
+            _perfectness = Utils.pixelPerfectHitFactor(Frame, Note);
             return _perfectness;
         }
 
         public HitFrame(CircleObject note, ReplayFrame frame, Keys key)
         {
-            this.frame = frame;
-            this.note = note;
-            this.key = key;
+            this.Frame = frame;
+            this.Note = note;
+            this.Key = key;
         }
 
 
         public override string ToString()
         {
             double hit = Perfectness;
-            string res = note.ToString();
+            string res = Note.ToString();
             res += hit <= 1 ? "" : " ATTEMPTED";
-            res += " HIT at " + frame.Time + "ms";
-            res += " (" + (frame.Time - note.StartTime) + "ms error, " + hit + " perfectness)";
+            res += " HIT at " + Frame.Time + "ms";
+            res += " (" + (Frame.Time - Note.StartTime) + "ms error, " + hit + " perfectness)";
             //res += "(" + frame.keyCounter + ")";
 
             return res;
-
         }
 
     }

@@ -50,7 +50,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="OsuDatabase.cs" />
-    <Compile Include="MissAnalyzer.cs" />
+    <Compile Include="MissAnalyzer.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="BMAPI\Colour.cs" />
     <Compile Include="BMAPI\Point2.cs" />
     <Compile Include="BMAPI\v1\Beatmap.cs" />
@@ -69,6 +71,7 @@
     <Compile Include="Curves\Circle.cs" />
     <Compile Include="Curves\Curve.cs" />
     <Compile Include="Curves\Line.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="ReplayAPI\Enums.cs" />
     <Compile Include="ReplayAPI\ExtensionMethods.cs" />
     <Compile Include="ReplayAPI\LifeFrame.cs" />
@@ -112,6 +115,11 @@
     </None>
     <None Include="OsuMiss.ahk" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="MissAnalyzer.resx">
+      <DependentUpon>MissAnalyzer.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

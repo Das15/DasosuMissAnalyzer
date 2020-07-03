@@ -19,44 +19,23 @@ namespace OsuMissAnalyzer
 	{
 		private const int arrowLength = 4;
 		private const int sliderGranularity = 10;
-		private const int size = 480;
 		private const int maxTime = 1000;
-		private float scale;
-		private Options options;
+		private float scale = 1;
+		private readonly Options options;
 		private Bitmap img;
-		private Graphics g, gOut;
-		private ReplayAnalyzer re;
+        private Graphics graphics;
+        private Graphics graphicsOut;
+        private ReplayAnalyzer re;
 		private Replay r;
 		private Beatmap b;
-		private int number;
+		private int number = 0;
 		private Rectangle area;
 		private bool ring;
 		private bool all;
-        private OsuDatabase database;
+        private readonly OsuDatabase database;
 
-        [STAThread]
-		public static void Main(string[] args)
-		{
-			MissAnalyzer m;
-			Debug.Print("Starting MissAnalyser... ");
-            String replay = null, beatmap = null;
-			if (args.Length > 0 && args[0].EndsWith(".osr"))
-			{
-                replay = args[0];
-				Debug.Print("Found [{0}]", args[0]);
-				if (args.Length > 1 && args[1].EndsWith(".osu"))
-				{
-					Debug.Print("Found [{0}]", args[1]);
-                    beatmap = args[1];
-				}
-			}
-			else if (args.Length > 1 && args[1].EndsWith(".osr"))  //Necessary to support drag & drop
-			{
-                replay = args[1];
-			}
-            m = new MissAnalyzer(replay, beatmap);
-			Application.Run(m);
-		}
+        
+		
 
 		public MissAnalyzer(string replayFile, string beatmap)
 		{
@@ -79,29 +58,28 @@ namespace OsuMissAnalyzer
                 database = new OsuDatabase(options, "osu!.db");
             }
 			Text = "Miss Analyzer";
-			Size = new Size(size, size + SystemInformation.CaptionHeight);
-			area = base.ClientRectangle;
-			img = new Bitmap(area.Width, area.Height);
-			g = Graphics.FromImage(img);
-			gOut = Graphics.FromHwnd(Handle);
 
 			FormBorderStyle = FormBorderStyle.FixedSingle;
             Debug.Print("Loading Replay file...");
             if (replayFile == null)
 			{
-				loadReplay();
-				if (r == null) { Environment.Exit(1); }
+				LoadReplay();
+				if (r == null) Environment.Exit(1);
 			}
 			else
 			{
 				r = new Replay(replayFile, true, false);
 			}
             Debug.Print("Loaded replay {0}", r.Filename);
+            Debug.Print("Amount of 300s: {0}", r.Count300);
+            Debug.Print("Amount of 100s: {0}", r.Count100);
+            Debug.Print("Amount of 50s: {0}", r.Count50);
+            Debug.Print("Amount of misses: {0}", r.CountMiss);
             Debug.Print("Loading Beatmap file...");
             if (beatmap == null)
 			{
-                loadBeatmap();
-				if (b == null) { Environment.Exit(1); }
+                LoadBeatmap();
+				if (b == null) Environment.Exit(1);
 			}
 			else
 			{
@@ -109,21 +87,19 @@ namespace OsuMissAnalyzer
 			}
             Debug.Print("Loaded beatmap {0}", b.Filename);
             Debug.Print("Analyzing... ");
-            Debug.Print(r.ReplayFrames.Count.ToString());
+            Debug.Print("Amount of replay frames: " + r.ReplayFrames.Count.ToString());
 			re = new ReplayAnalyzer(b, r);
-            
-			if (re.misses.Count == 0)
+            Debug.Print(re.MainInfo().ToString());
+			if (re.Misses.Count == 0)
 			{
 				Console.ForegroundColor = ConsoleColor.Red;
-				Debug.Print("There is no miss in this replay. ");
+				Debug.Print("There is no miss in this replay.");
 				Console.ReadLine();
 				Environment.Exit(1);
 			}
-			number = 0;
-			scale = 1;
 		}
 
-		private void loadReplay()
+		private void LoadReplay()
 		{
 			if(options.Settings.ContainsKey("osudir"))
 			{
@@ -131,29 +107,29 @@ namespace OsuMissAnalyzer
                 {
                     r = new Replay(
 							new DirectoryInfo(
-								Path.Combine(options.Settings["osudir"], "Data", "r"))
-							.GetFiles().Where(f => f.Name.EndsWith("osr"))
-							.OrderByDescending(f => f.LastWriteTime)
-							.First().FullName,
-						 true, false);
+							Path.Combine(options.Settings["osudir"], "Data", "r"))
+							    .GetFiles().Where(f => f.Name.EndsWith("osr"))
+							    .OrderByDescending(f => f.LastWriteTime)
+							    .First().FullName,
+						        true, false);
                 }
 			}
 			if(r == null)
 			{
-                using (OpenFileDialog fd = new OpenFileDialog())
+                using (OpenFileDialog fileDialog = new OpenFileDialog())
                 {
-                    fd.Title = "Choose replay file";
-                    fd.Filter = "osu! replay files (*.osr)|*.osr";
-                    DialogResult d = fd.ShowDialog();
+                    fileDialog.Title = "Choose replay file";
+                    fileDialog.Filter = "osu! replay files (*.osr)|*.osr";
+                    DialogResult d = fileDialog.ShowDialog();
                     if (d == DialogResult.OK)
                     {
-                        r = new Replay(fd.FileName, true, false);
+                        r = new Replay(fileDialog.FileName, true, false);
                     }
                 }
 			}
         }
 
-        private void loadBeatmap()
+        private void LoadBeatmap()
         {
             if (database != null)
             {
@@ -161,18 +137,18 @@ namespace OsuMissAnalyzer
             }
             else
             {
-                b = getBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                b = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
                 if (b == null)
                 {
                     if (options.Settings.ContainsKey("songsdir"))
                     {
-                        b = getBeatmapFromHash(options.Settings["songsdir"]);
+                        b = GetBeatmapFromHash(options.Settings["songsdir"]);
                     }
                     else if (options.Settings.ContainsKey("osudir")
                       && File.Exists(Path.Combine(options.Settings["osudir"], "Songs"))
                       )
                     {
-                        b = getBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
+                        b = GetBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
                     }
                     else
                     {
@@ -191,7 +167,7 @@ namespace OsuMissAnalyzer
             }
         }
 
-        private Beatmap getBeatmapFromHash(string dir, bool songsDir = true)
+        private Beatmap GetBeatmapFromHash(string dir, bool songsDir = true)
         {
             Debug.Print("\nChecking API Key...");
             JArray j = JArray.Parse("[]");
@@ -221,19 +197,19 @@ namespace OsuMissAnalyzer
 
                 foreach (string folder in folders)
                 {
-                    Beatmap map = readFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                    Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
                     if (map != null) return map;
                 }
             }
             else
             {
-                Beatmap map = readFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
+                Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
                 if (map != null) return map;
             }
             return null;
         }
 
-        private Beatmap readFolder(string folder, string id)
+        private Beatmap ReadFolder(string folder, string id)
         {
             foreach (string file in Directory.GetFiles(folder, "*.osu"))
             {
@@ -292,7 +268,7 @@ namespace OsuMissAnalyzer
                     ScaleChange(-1);
                     break;
                 case System.Windows.Forms.Keys.Right:
-                    if (number == re.misses.Count - 1) break;
+                    if (number == re.Misses.Count - 1) break;
                     number++;
                     break;
                 case System.Windows.Forms.Keys.Left:
@@ -303,17 +279,19 @@ namespace OsuMissAnalyzer
                     ring = !ring;
                     break;
                 case System.Windows.Forms.Keys.P:
-                    for (int i = 0; i < re.misses.Count; i++)
+                    for (int i = 0; i < re.Misses.Count; i++)
                     {
-                        if (all) drawMiss(b.HitObjects.IndexOf(re.misses[i]));
-                        else drawMiss(i);
-                        string filename = Path.GetFileNameWithoutExtension(r.Filename) + "." + i + ".png";
-                        img.Save(filename, System.Drawing.Imaging.ImageFormat.Png);
+                        if (all) DrawMiss(b.HitObjects.IndexOf(re.Misses[i]));
+                        else DrawMiss(i);
+                        img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
+                                 r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
+                                 + "." + i + ".png",
+                            System.Drawing.Imaging.ImageFormat.Png);
                     }
                     break;
                 case System.Windows.Forms.Keys.R:
-                    loadReplay();
-                    loadBeatmap();
+                    LoadReplay();
+                    LoadBeatmap();
                     re = new ReplayAnalyzer(b, r);
                     Invalidate();
                     number = 0;
@@ -326,12 +304,12 @@ namespace OsuMissAnalyzer
                     if (all)
                     {
                         all = false;
-                        number = re.misses.Count(x => x.StartTime < b.HitObjects[number].StartTime);
+                        number = re.Misses.Count(x => x.StartTime < b.HitObjects[number].StartTime);
                     }
                     else
                     {
                         all = true;
-                        number = b.HitObjects.IndexOf(re.misses[number]);
+                        number = b.HitObjects.IndexOf(re.Misses[number]);
                     }
                     break;
             }
@@ -340,7 +318,7 @@ namespace OsuMissAnalyzer
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            gOut.DrawImage(drawMiss(number), area);
+            graphicsOut.DrawImage(DrawMiss(number), area);
         }
 
         /// <summary>
@@ -348,19 +326,21 @@ namespace OsuMissAnalyzer
         /// </summary>
         /// <returns>A Bitmap containing the drawing</returns>
         /// <param name="num">Index of the miss as it shows up in r.misses.</param>
-        private Bitmap drawMiss(int num)
+        private Bitmap DrawMiss(int num)
         {
-            bool hr = r.Mods.HasFlag(Mods.HardRock);
+            bool hardrock = r.Mods.HasFlag(Mods.HardRock);
             CircleObject miss;
             if (all) miss = b.HitObjects[num];
-            else miss = re.misses[num];
+            else miss = re.Misses[num];
             float radius = (float)miss.Radius;
-            Pen circle = new Pen(Color.Gray, radius * 2 / scale);
-            circle.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-            circle.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-            circle.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+            Pen circle = new Pen(Color.Gray, radius * 2 / scale)
+            {
+                StartCap = System.Drawing.Drawing2D.LineCap.Round,
+                EndCap = System.Drawing.Drawing2D.LineCap.Round,
+                LineJoin = System.Drawing.Drawing2D.LineJoin.Round
+            };
             Pen p = new Pen(Color.White);
-            g.FillRectangle(p.Brush, area);
+            graphics.FillRectangle(p.Brush, area);
             RectangleF bounds = new RectangleF(PointF.Subtract(miss.Location.ToPointF(), Scale(area.Size, scale / 2)),
                 Scale(area.Size, scale));
 
@@ -400,34 +380,34 @@ namespace OsuMissAnalyzer
                     for (int x = 0; x < sliderGranularity; x++)
                     {
                         pt[x] = ScaleToRect(
-                            pSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).toPoint(),
-                                bounds, hr), bounds);
+                            PSub(slider.PositionAtDistance(x * 1f * slider.PixelLength / sliderGranularity).ToPoint(),
+                                bounds, hardrock), bounds);
                     }
                     circle.Color = Color.LemonChiffon;
-                    g.DrawLines(circle, pt);
+                    graphics.DrawLines(circle, pt);
                 }
 
                 p.Color = Color.FromArgb(c == 100 ? c + 50 : c, c, c);
                 if (ring)
                 {
-                    g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
+                    graphics.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
+                        PSub(b.HitObjects[q].Location.ToPointF(), bounds, hardrock),
                         new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
                 }
                 else
                 {
-                    g.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
-                        pSub(b.HitObjects[q].Location.ToPointF(), bounds, hr),
+                    graphics.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
+                        PSub(b.HitObjects[q].Location.ToPointF(), bounds, hardrock),
                         new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
                 }
             }
             float distance = 10.0001f;
             for (int k = i; k < j; k++)
             {
-                PointF p1 = pSub(r.ReplayFrames[k].PointF, bounds, hr);
-                PointF p2 = pSub(r.ReplayFrames[k + 1].PointF, bounds, hr);
-                p.Color = getHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
-                g.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
+                PointF p1 = PSub(r.ReplayFrames[k].PointF, bounds, hardrock);
+                PointF p2 = PSub(r.ReplayFrames[k + 1].PointF, bounds, hardrock);
+                p.Color = GetHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
+                graphics.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
                 if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k + 1].Time) > 50)
                 {
                     Point2 v1 = new Point2(p1.X - p2.X, p1.Y - p2.Y);
@@ -440,8 +420,8 @@ namespace OsuMissAnalyzer
                         p2 = ScaleToRect(p2, bounds);
                         p3 = ScaleToRect(p3, bounds);
                         p4 = ScaleToRect(p4, bounds);
-                        g.DrawLine(p, p2, p3);
-                        g.DrawLine(p, p2, p4);
+                        graphics.DrawLine(p, p2, p3);
+                        graphics.DrawLine(p, p2, p4);
                     }
                     distance = 0;
                 }
@@ -449,20 +429,20 @@ namespace OsuMissAnalyzer
                 {
                     distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
                 }
-                if (re.getKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
+                if (re.GetKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
                 {
-                    g.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
+                    graphics.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
                         bounds));
                 }
             }
 
             p.Color = Color.Black;
             Font f = new Font(FontFamily.GenericSansSerif, 12);
-            g.DrawString(b.ToString(), f, p.Brush, 0, 0);
-            if (all) g.DrawString("Object " + (num + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, f.Height);
-            else g.DrawString("Miss " + (num + 1) + " of " + re.misses.Count, f, p.Brush, 0, f.Height);
+            graphics.DrawString(b.ToString(), f, p.Brush, 0, 0);
+            if (all) graphics.DrawString("Object " + (num + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, f.Height);
+            else graphics.DrawString("Miss " + (num + 1) + " of " + re.Misses.Count, f, p.Brush, 0, f.Height);
             TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
-            g.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, area.Height - f.Height);
+            graphics.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, area.Height - f.Height);
             return img;
         }
 
@@ -472,7 +452,7 @@ namespace OsuMissAnalyzer
         /// <returns>The hit window in ms.</returns>
         /// <param name="od">OD of the map.</param>
         /// <param name="hit">Hit value (300, 100, or 50).</param>
-        private static float getHitWindow(float od, int hit)
+        private static float GetHitWindow(float od, int hit)
         {
             switch (hit)
             {
@@ -494,11 +474,12 @@ namespace OsuMissAnalyzer
         /// <returns>The hit color.</returns>
         /// <param name="od">OD of the map.</param>
         /// <param name="ms">Hit timing in ms (can be negative).</param>
-        private static Color getHitColor(float od, int ms)
+        private static Color GetHitColor(float od, int ms)
         {
-            if (Math.Abs(ms) < getHitWindow(od, 300)) return Color.SkyBlue;
-            if (Math.Abs(ms) < getHitWindow(od, 100)) return Color.SpringGreen;
-            if (Math.Abs(ms) < getHitWindow(od, 50)) return Color.Purple;
+            ms = Math.Abs(ms);
+            if (ms < GetHitWindow(od, 300)) return Color.SkyBlue;
+            if (ms < GetHitWindow(od, 100)) return Color.SpringGreen;
+            if (ms < GetHitWindow(od, 50)) return Color.Purple;
             return Color.Black;
         }
 
@@ -509,7 +490,7 @@ namespace OsuMissAnalyzer
         /// <param name="p">The point to be flipped.</param>
         /// <param name="s">The height of the rectangle it's being flipped in</param>
         /// <param name="hr">Whether or not Hard Rock is on.</param>
-        private PointF flip(PointF p, float s, bool hr)
+        private PointF Flip(PointF p, float s, bool hr)
         {
             if (!hr) return p;
             p.Y = s - p.Y;
@@ -523,10 +504,10 @@ namespace OsuMissAnalyzer
         /// <param name="p1">The point.</param>
         /// <param name="rect">The bounding rectangle to subtract from</param>
         /// <param name="hr">Whether or not Hard Rock is on.</param>
-        private PointF pSub(PointF p1, RectangleF rect, bool hr)
+        private PointF PSub(PointF p1, RectangleF rect, bool hr)
         {
             PointF p = PointF.Subtract(p1, new SizeF(rect.Location));
-            return flip(p, rect.Width, hr);
+            return Flip(p, rect.Width, hr);
         }
 
         /// <summary>
@@ -576,11 +557,38 @@ namespace OsuMissAnalyzer
         {
             return ScaleToRect(p, rect, area.Size);
         }
+
         private RectangleF ScaleToRect(RectangleF p, RectangleF rect, SizeF sz)
         {
             return new RectangleF(PointF.Subtract(ScaleToRect(PointF.Add(p.Location, Scale(p.Size, 0.5f)), rect),
                 Scale(p.Size, Scale(Div(sz, rect.Size), 0.5f))),
                 Scale(p.Size, Div(sz, rect.Size)));
+        }
+
+        public void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // MissAnalyzer
+            // 
+            this.ClientSize = new System.Drawing.Size(384, 561);
+            this.Name = "MissAnalyzer";
+            this.Load += new System.EventHandler(this.MissAnalyzer_Load);
+            this.ResumeLayout(false);
+
+        }
+
+        private void MissAnalyzer_Load(object sender, EventArgs e)
+        {
+            area = ClientRectangle;
+            img = new Bitmap(area.Width, area.Height);
+            graphics = Graphics.FromImage(img);
+            graphicsOut = Graphics.FromHwnd(Handle);
+        }
+
+        private void TableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

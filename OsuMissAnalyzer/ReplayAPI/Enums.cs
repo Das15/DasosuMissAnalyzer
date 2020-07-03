@@ -77,7 +77,7 @@ namespace ReplayAPI
 
     public enum GameModes
     {
-        osu = 0,
+        OsuStd = 0,
         Taiko = 1,
         CtB = 2,
         Mania = 3

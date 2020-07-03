@@ -19,17 +19,17 @@ namespace ReplayAPI
 			}
 		}
         public Keys Keys { get; set; }
-        public KeyCounter keyCounter { get; set; }
-        public int combo { get; set; }
-        public double travelledDistance { get; set; }
-        public double travelledDistanceDiff { get; set; }
-        public double speed { get; set; }
-        public double acceleration { get; set; }
+        public KeyCounter KeyCounter { get; set; }
+        public int Combo { get; set; }
+        public double TravelledDistance { get; set; }
+        public double TravelledDistanceDiff { get; set; }
+        public double Speed { get; set; }
+        public double Acceleration { get; set; }
 
         
         public override string ToString()
         {
-            return string.Format("{0}({1}): ({2},{3}) {4} {5}", Time, TimeDiff, X, Y, Keys, travelledDistanceDiff);
+            return string.Format("{0}({1}): ({2},{3}) {4} {5}", Time, TimeDiff, X, Y, Keys, TravelledDistanceDiff);
         }
     }
 }

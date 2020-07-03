@@ -25,7 +25,7 @@ namespace ReplayAPI
 
             object[] properties =
             {
-                //(1 << 16),
+                // (1 << 16),
                 (1 << 21),
                 2,
                 3,

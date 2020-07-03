@@ -12,10 +12,8 @@ namespace ReplayAPI
     public class Replay : IDisposable
     {
         // for customizing which replays to flip
-        public bool AxisFlip
-        {
-            get; set;
-        }
+        public bool AxisFlip { get; set; }
+        public List<ReplayFrame> Times { get; private set; }
 
         public GameModes GameMode;
         public string Filename;
@@ -39,34 +37,35 @@ namespace ReplayAPI
         public List<ReplayFrame> ReplayFrames = new List<ReplayFrame>();
         public int Seed;
 
-        private BinaryReader replayReader;
-        private CultureInfo culture = new CultureInfo("en-US", false);
+        private readonly BinaryReader replayReader;
+        private readonly CultureInfo culture = new CultureInfo("en-US", false);
         private bool headerLoaded;
-        public bool fullLoaded { get; private set; }
+        public bool FullLoaded { get; private set; }
 
         public Replay(string replayFile, bool fullLoad, bool calculateSpeed)
         {
+            calculateSpeed = true;
             Filename = replayFile;
             using (replayReader = new BinaryReader(new FileStream(replayFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {
-                loadHeader();
+                LoadHeader();
                 if (fullLoad)
                 {
                     Load();
                 }
             }
-            if (fullLoad && !fullLoaded)
+            if (fullLoad && !FullLoaded)
                 throw new Exception("Replay is not full but requsted to be read full.");
             if (calculateSpeed)
-                calculateCursorSpeed();
+                CalculateCursorSpeed();
         }
 
-        private Keys parseKeys(string v)
+        private Keys ParseKeys(string v)
         {
             return (Keys)Enum.Parse(typeof(Keys), v);
         }
 
-        private void loadHeader()
+        private void LoadHeader()
         {
             GameMode = (GameModes)Enum.Parse(typeof(GameModes), replayReader.ReadByte().ToString(culture));
             FileFormat = replayReader.ReadInt32();
@@ -86,50 +85,45 @@ namespace ReplayAPI
             headerLoaded = true;
         }
 
-        public List<ReplayFrame> times
-        {
-            get; private set;
-        }
-
-        private void calculateCursorSpeed()
+        private void CalculateCursorSpeed()
         {
             double distance = 0;
 
-            times = ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
+            Times = ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
 
-            if (!ReferenceEquals(times, null) && times.Count > 0)
+            if (!ReferenceEquals(Times, null) && Times.Count > 0)
             {
 
-                times[0].travelledDistance = distance;
-                times[0].travelledDistanceDiff = 0;
-                for (int i = 0; i < times.Count - 1; ++i)
+                Times[0].TravelledDistance = distance;
+                Times[0].TravelledDistanceDiff = 0;
+                for (int i = 0; i < Times.Count - 1; ++i)
                 {
-                    ReplayFrame from = times[i], to = times[i + 1];
+                    ReplayFrame from = Times[i], to = Times[i + 1];
                     double newDist = Utils.dist(from.X, from.Y, to.X, to.Y);
                     distance += newDist;
-                    to.travelledDistance = distance;
-                    to.travelledDistanceDiff = newDist;
+                    to.TravelledDistance = distance;
+                    to.TravelledDistanceDiff = newDist;
                 }
 
-                times[0].speed = 0;
-                for (int i = 0; i < times.Count - 1; ++i)
+                Times[0].Speed = 0;
+                for (int i = 0; i < Times.Count - 1; ++i)
                 {
-                    ReplayFrame to = times[i + 1], current = times[i];
+                    ReplayFrame to = Times[i + 1], current = Times[i];
 
-                    double V = (to.travelledDistance - current.travelledDistance) / (to.TimeDiff);
-                    to.speed = V;
+                    double V = (to.TravelledDistance - current.TravelledDistance) / (to.TimeDiff);
+                    to.Speed = V;
                 }
-                times.Last().speed = 0;
+                Times.Last().Speed = 0;
 
-                times[0].acceleration = 0;
-                for (int i = 0; i < times.Count - 1; ++i)
+                Times[0].Acceleration = 0;
+                for (int i = 0; i < Times.Count - 1; ++i)
                 {
-                    ReplayFrame to = times[i + 1], current = times[i];
+                    ReplayFrame to = Times[i + 1], current = Times[i];
 
-                    double A = (to.speed - current.speed) / (to.TimeDiff);
-                    to.acceleration = A;
+                    double A = (to.Speed - current.Speed) / (to.TimeDiff);
+                    to.Acceleration = A;
                 }
-                times.Last().acceleration = 0;
+                Times.Last().Acceleration = 0;
             }
         }
 
@@ -139,11 +133,11 @@ namespace ReplayAPI
         public void Load()
         {
             if (!headerLoaded)
-                loadHeader();
-            if (fullLoaded)
+                LoadHeader();
+            if (FullLoaded)
                 return;
 
-            //Life
+            // Life
             string lifeData = replayReader.ReadNullableString();
             if (!string.IsNullOrEmpty(lifeData))
             {
@@ -166,7 +160,7 @@ namespace ReplayAPI
 
             ReplayLength = replayReader.ReadInt32();
 
-            //Data
+            // Data
             if (ReplayLength > 0)
             {
                 int lastTime = 0;
@@ -194,24 +188,24 @@ namespace ReplayAPI
                             Time = int.Parse(split[0], culture) + lastTime,
                             X = float.Parse(split[1], culture),
                             Y = float.Parse(split[2], culture),
-                            Keys = parseKeys(split[3])
+                            Keys = ParseKeys(split[3])
                         });
                         lastTime = ReplayFrames[ReplayFrames.Count - 1].Time;
                     }
                 }
-                fullLoaded = true;
+                FullLoaded = true;
             }
 
             ReplayFrames.RemoveRange(0, 3);
 
-            //Todo: There are some extra bytes here
+            // Todo: There are some extra bytes here
         }
 
         public void Save(string file)
         {
             using (BinaryWriter bw = new BinaryWriter(new FileStream(file, FileMode.Create, FileAccess.Write, FileShare.Read)))
             {
-                //Header
+                // Header
                 bw.Write((byte)GameMode);
                 bw.Write(FileFormat);
                 bw.WriteNullableString(MapHash);
@@ -228,7 +222,7 @@ namespace ReplayAPI
                 bw.Write(IsPerfect);
                 bw.Write((int)Mods);
 
-                //Life
+                // Life
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < LifeFrames.Count; i++)
                     sb.AppendFormat("{0}|{1},", LifeFrames[i].Time.ToString(culture), LifeFrames[i].Percentage.ToString(culture));
@@ -236,7 +230,7 @@ namespace ReplayAPI
 
                 bw.Write(PlayTime.ToUniversalTime().Ticks);
 
-                //Data
+                // Data
                 if (ReplayFrames.Count == 0)
                     bw.Write(0);
                 else
@@ -275,7 +269,7 @@ namespace ReplayAPI
             LifeFrames.Clear();
         }
 
-        public void flip()
+        public void Flip()
         {
             AxisFlip = !AxisFlip;
             ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
@@ -310,23 +304,23 @@ namespace ReplayAPI
             if (!ReferenceEquals(map, null))
             {
                 var analyzer = new ReplayAnalyzer(map, this);
-                hits = analyzer.hits;
-                attemptedHits = analyzer.attemptedHits;
+                hits = analyzer.Hits;
+                attemptedHits = analyzer.AttemptedHits;
             }
 
             int hitIndex = 0;
             int attemptedHitIndex = 0;
             for (int i = 0; i < ReplayFrames.Count; i++)
             {
-                if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].frame.Time == ReplayFrames[i].Time)
+                if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].Frame.Time == ReplayFrames[i].Time)
                 {
                     sb.AppendLine(ReplayFrames[i].ToString() + " " + hits[hitIndex].ToString());
                     ++hitIndex;
                     continue;
                 }
-                if (!ReferenceEquals(attemptedHits, null) && attemptedHitIndex < attemptedHits.Count && attemptedHits[attemptedHitIndex].frame.Time == ReplayFrames[i].Time)
+                if (!ReferenceEquals(attemptedHits, null) && attemptedHitIndex < attemptedHits.Count && attemptedHits[attemptedHitIndex].Frame.Time == ReplayFrames[i].Time)
                 {
-                    sb.AppendLine(ReplayFrames[i].ToString() + " " + attemptedHits[attemptedHitIndex].note.ToString());
+                    sb.AppendLine(ReplayFrames[i].ToString() + " " + attemptedHits[attemptedHitIndex].Note.ToString());
                     ++attemptedHitIndex;
                     continue;
                 }

@@ -39,9 +39,9 @@ namespace BMAPI
 
         public void Normalize()
         {
-            float length = Length; //Cache for minor performance improvement
-            X = X / length;
-            Y = Y / length;
+            float length = Length; // Cache for minor performance improvement
+            X /= length;
+            Y /= length;
         }
         public float DistanceTo(Point2 P)
         {

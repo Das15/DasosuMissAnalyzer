@@ -381,7 +381,7 @@ namespace osuDodgyMomentsFinder
 
 		#endregion Operators
 
-		public Point toPoint()
+		public Point ToPoint()
 		{
 			return new Point((int)X, (int)Y);
 		}

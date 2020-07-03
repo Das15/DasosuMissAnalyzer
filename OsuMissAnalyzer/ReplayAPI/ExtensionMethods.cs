@@ -39,7 +39,7 @@ namespace ReplayAPI
     }
 }
 
-//Required for extension methods in .net 2.0
+// Required for extension methods in .net 2.0
 namespace System.Runtime.CompilerServices
 {
     public class ExtensionAttribute : Attribute

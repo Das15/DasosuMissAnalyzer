@@ -7,7 +7,7 @@ namespace OsuMissAnalyzer
     class OsuDatabase : BinaryReader
     {
         private Options options;
-        private string databaseFile;
+        private readonly string databaseFile;
         public OsuDatabase(Options o, string file)
             : base(new FileStream(Path.Combine(o.Settings["osudir"], file), FileMode.Open))
         {

@@ -10,23 +10,22 @@ namespace osuDodgyMomentsFinder
 {
     public class ClickFrame
     {
-        public ReplayFrame frame { get; set; }
-        public Keys key { get; set; }
+        public ReplayFrame Frame { get; set; }
+        public Keys Key { get; set; }
 
         public ClickFrame(ReplayFrame frame, Keys key)
         {
-            this.frame = frame;
-            this.key = key;
+            this.Frame = frame;
+            this.Key = key;
         }
 
         public override string ToString()
         {
             string res = "";
-            res += "* " + frame.Time + "ms";
-            res += " (" + key + ")";
+            res += "* " + Frame.Time + "ms";
+            res += " (" + Key + ")";
 
             return res;
-
         }
     }
 }
