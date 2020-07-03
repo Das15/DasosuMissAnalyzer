@@ -24,7 +24,7 @@ namespace OsuMissAnalyzer
 		private readonly Options options;
 		private Bitmap img;
         private Graphics graphics;
-        private Graphics graphicsOut;
+        // private Graphics graphicsOut;
         private ReplayAnalyzer re;
 		private Replay r;
 		private Beatmap b;
@@ -32,6 +32,8 @@ namespace OsuMissAnalyzer
 		private Rectangle area;
 		private bool ring;
 		private bool all;
+        private TableLayoutPanel tableLayoutPanel1;
+        private PictureBox mainCanvas;
         private readonly OsuDatabase database;
 
         
@@ -318,7 +320,8 @@ namespace OsuMissAnalyzer
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
-            graphicsOut.DrawImage(DrawMiss(number), area);
+            // graphicsOut.DrawImage(DrawMiss(number), area);
+            mainCanvas.Image = DrawMiss(number);
         }
 
         /// <summary>
@@ -567,26 +570,59 @@ namespace OsuMissAnalyzer
 
         public void InitializeComponent()
         {
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.mainCanvas = new System.Windows.Forms.PictureBox();
+            this.tableLayoutPanel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).BeginInit();
             this.SuspendLayout();
+            // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 2;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.Controls.Add(this.mainCanvas, 0, 1);
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(2, 0);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 2;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 3.197158F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 96.80284F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(381, 563);
+            this.tableLayoutPanel1.TabIndex = 0;
+            // 
+            // mainCanvas
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.mainCanvas, 2);
+            this.mainCanvas.Location = new System.Drawing.Point(3, 21);
+            this.mainCanvas.Name = "mainCanvas";
+            this.mainCanvas.Size = new System.Drawing.Size(375, 539);
+            this.mainCanvas.TabIndex = 0;
+            this.mainCanvas.TabStop = false;
+            this.mainCanvas.Click += new System.EventHandler(this.MainCanvas_Click);
             // 
             // MissAnalyzer
             // 
             this.ClientSize = new System.Drawing.Size(384, 561);
+            this.Controls.Add(this.tableLayoutPanel1);
             this.Name = "MissAnalyzer";
             this.Load += new System.EventHandler(this.MissAnalyzer_Load);
+            this.tableLayoutPanel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).EndInit();
             this.ResumeLayout(false);
 
         }
 
         private void MissAnalyzer_Load(object sender, EventArgs e)
         {
-            area = ClientRectangle;
+            area = mainCanvas.ClientRectangle;
             img = new Bitmap(area.Width, area.Height);
             graphics = Graphics.FromImage(img);
-            graphicsOut = Graphics.FromHwnd(Handle);
+            mainCanvas.Image = img;
+            // graphicsOut = Graphics.FromImage(mainCanvas.Image);
+            
         }
 
-        private void TableLayoutPanel1_Paint(object sender, PaintEventArgs e)
+        private void MainCanvas_Click(object sender, EventArgs e)
         {
 
         }
