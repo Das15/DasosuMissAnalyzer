@@ -15,63 +15,53 @@ using System.Threading;
 
 namespace OsuMissAnalyzer
 {
-	public class MissAnalyzer : Form
-	{
-		private const int arrowLength = 4;
-		private const int sliderGranularity = 10;
-		private const int maxTime = 1000;
-		private float scale = 1;
-		private readonly Options options;
-		private Bitmap img;
+    public class MissAnalyzer : Form
+    {
+        private const int arrowLength = 4;
+        private const int sliderGranularity = 10;
+        private const int maxTime = 1000;
+        private float scale = 1;
+        private readonly Options options;
+        private Bitmap img;
         private Graphics graphics;
         // private Graphics graphicsOut;
-        private ReplayAnalyzer re;
-		private Replay r;
-		private Beatmap b;
-		private int number = 0;
-		private Rectangle area;
-		private bool ring;
-		private bool all;
+        private ReplayAnalyzer replayAnalyzer;
+        private Replay r;
+        private Beatmap beatmap;
+        private int number = 0;
+        private Rectangle area;
+        private bool ring;
+        private bool all;
         private TableLayoutPanel tableLayoutPanel1;
         private PictureBox mainCanvas;
-        private readonly OsuDatabase database;
+        private MenuStrip menuStrip1;
+        private ToolStripMenuItem menuKit;
+        private ToolStripMenuItem newReplayEntry;
+        private OsuDatabase database;
 
         
-		
+        
 
-		public MissAnalyzer(string replayFile, string beatmap)
-		{
-			if (!File.Exists("options.cfg"))
-			{
-				File.Create("options.cfg").Close();
-				Console.ForegroundColor = ConsoleColor.Green;
-				Debug.Print("\nCreating options.cfg... ");
-				Debug.Print("- In options.cfg, you can define various settings that impact the program. ");
-				Debug.Print("- To add these to options.cfg, add a new line formatted <Setting Name>=<Value> ");
-				Debug.Print("- Available settings : SongsDir | Value = Specify osu!'s songs dir.");
-				Debug.Print("-                       APIKey  | Value = Your osu! API key (https://osu.ppy.sh/api/");
-                Debug.Print("-                       OsuDir  | Value = Your osu! directory");
-
-                Console.ResetColor();
-			}
-			options = new Options("options.cfg");
+        public MissAnalyzer(string replayFile, string beatmap)
+        {
+            options = new Options("options.cfg");
             if(options.Settings.ContainsKey("osudir"))
             {
                 database = new OsuDatabase(options, "osu!.db");
             }
-			Text = "Miss Analyzer";
+            Text = "Miss Analyzer";
 
-			FormBorderStyle = FormBorderStyle.FixedSingle;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
             Debug.Print("Loading Replay file...");
             if (replayFile == null)
-			{
-				LoadReplay();
-				if (r == null) Environment.Exit(1);
-			}
-			else
-			{
-				r = new Replay(replayFile, true, false);
-			}
+            {
+                LoadReplay();
+                if (r == null) Environment.Exit(1);
+            }
+            else
+            {
+                r = new Replay(replayFile, true, false);
+            }
             Debug.Print("Loaded replay {0}", r.Filename);
             Debug.Print("Amount of 300s: {0}", r.Count300);
             Debug.Print("Amount of 100s: {0}", r.Count100);
@@ -79,45 +69,45 @@ namespace OsuMissAnalyzer
             Debug.Print("Amount of misses: {0}", r.CountMiss);
             Debug.Print("Loading Beatmap file...");
             if (beatmap == null)
-			{
+            {
                 LoadBeatmap();
-				if (b == null) Environment.Exit(1);
-			}
-			else
-			{
-				b = new Beatmap(beatmap);
-			}
-            Debug.Print("Loaded beatmap {0}", b.Filename);
+                if (this.beatmap == null) Environment.Exit(1);
+            }
+            else
+            {
+                this.beatmap = new Beatmap(beatmap);
+            }
+            Debug.Print("Loaded beatmap {0}", this.beatmap.Filename);
             Debug.Print("Analyzing... ");
             Debug.Print("Amount of replay frames: " + r.ReplayFrames.Count.ToString());
-			re = new ReplayAnalyzer(b, r);
-            Debug.Print(re.MainInfo().ToString());
-			if (re.Misses.Count == 0)
-			{
-				Console.ForegroundColor = ConsoleColor.Red;
-				Debug.Print("There is no miss in this replay.");
-				Console.ReadLine();
-				Environment.Exit(1);
-			}
-		}
+            replayAnalyzer = new ReplayAnalyzer(this.beatmap, r);
+            Debug.Print(replayAnalyzer.MainInfo().ToString());
+            if (replayAnalyzer.Misses.Count == 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Debug.Print("There is no miss in this replay.");
+                Console.ReadLine();
+                Environment.Exit(1);
+            }
+        }
 
-		private void LoadReplay()
-		{
-			if(options.Settings.ContainsKey("osudir"))
-			{
-				if (MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+        private void LoadReplay()
+        {
+            if(options.Settings.ContainsKey("osudir"))
+            {
+                if (MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 {
                     r = new Replay(
-							new DirectoryInfo(
-							Path.Combine(options.Settings["osudir"], "Data", "r"))
-							    .GetFiles().Where(f => f.Name.EndsWith("osr"))
-							    .OrderByDescending(f => f.LastWriteTime)
-							    .First().FullName,
-						        true, false);
+                            new DirectoryInfo(
+                            Path.Combine(options.Settings["osudir"], "Data", "r"))
+                                .GetFiles().Where(f => f.Name.EndsWith("osr"))
+                                .OrderByDescending(f => f.LastWriteTime)
+                                .First().FullName,
+                                true, false);
                 }
-			}
-			if(r == null)
-			{
+            }
+            if(r == null)
+            {
                 using (OpenFileDialog fileDialog = new OpenFileDialog())
                 {
                     fileDialog.Title = "Choose replay file";
@@ -128,29 +118,29 @@ namespace OsuMissAnalyzer
                         r = new Replay(fileDialog.FileName, true, false);
                     }
                 }
-			}
+            }
         }
 
         private void LoadBeatmap()
         {
             if (database != null)
             {
-                b = database.GetBeatmap(r.MapHash);
+                beatmap = database.GetBeatmap(r.MapHash);
             }
             else
             {
-                b = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
-                if (b == null)
+                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                if (beatmap == null)
                 {
                     if (options.Settings.ContainsKey("songsdir"))
                     {
-                        b = GetBeatmapFromHash(options.Settings["songsdir"]);
+                        beatmap = GetBeatmapFromHash(options.Settings["songsdir"]);
                     }
                     else if (options.Settings.ContainsKey("osudir")
                       && File.Exists(Path.Combine(options.Settings["osudir"], "Songs"))
                       )
                     {
-                        b = GetBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
+                        beatmap = GetBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
                     }
                     else
                     {
@@ -161,7 +151,7 @@ namespace OsuMissAnalyzer
                             DialogResult d = fd.ShowDialog();
                             if (d == DialogResult.OK)
                             {
-                                b = new Beatmap(fd.FileName);
+                                beatmap = new Beatmap(fd.FileName);
                             }
                         }
                     }
@@ -270,7 +260,7 @@ namespace OsuMissAnalyzer
                     ScaleChange(-1);
                     break;
                 case System.Windows.Forms.Keys.Right:
-                    if (number == re.Misses.Count - 1) break;
+                    if (number == replayAnalyzer.Misses.Count - 1) break;
                     number++;
                     break;
                 case System.Windows.Forms.Keys.Left:
@@ -281,9 +271,9 @@ namespace OsuMissAnalyzer
                     ring = !ring;
                     break;
                 case System.Windows.Forms.Keys.P:
-                    for (int i = 0; i < re.Misses.Count; i++)
+                    for (int i = 0; i < replayAnalyzer.Misses.Count; i++)
                     {
-                        if (all) DrawMiss(b.HitObjects.IndexOf(re.Misses[i]));
+                        if (all) DrawMiss(beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[i]));
                         else DrawMiss(i);
                         img.Save(r.Filename.Substring(r.Filename.LastIndexOf("\\") + 1,
                                  r.Filename.Length - 5 - r.Filename.LastIndexOf("\\"))
@@ -294,10 +284,10 @@ namespace OsuMissAnalyzer
                 case System.Windows.Forms.Keys.R:
                     LoadReplay();
                     LoadBeatmap();
-                    re = new ReplayAnalyzer(b, r);
+                    replayAnalyzer = new ReplayAnalyzer(beatmap, r);
                     Invalidate();
                     number = 0;
-                    if (r == null || b == null)
+                    if (r == null || beatmap == null)
                     {
                         Environment.Exit(1);
                     }
@@ -306,12 +296,12 @@ namespace OsuMissAnalyzer
                     if (all)
                     {
                         all = false;
-                        number = re.Misses.Count(x => x.StartTime < b.HitObjects[number].StartTime);
+                        number = replayAnalyzer.Misses.Count(x => x.StartTime < beatmap.HitObjects[number].StartTime);
                     }
                     else
                     {
                         all = true;
-                        number = b.HitObjects.IndexOf(re.Misses[number]);
+                        number = beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[number]);
                     }
                     break;
             }
@@ -333,8 +323,8 @@ namespace OsuMissAnalyzer
         {
             bool hardrock = r.Mods.HasFlag(Mods.HardRock);
             CircleObject miss;
-            if (all) miss = b.HitObjects[num];
-            else miss = re.Misses[num];
+            if (all) miss = beatmap.HitObjects[num];
+            else miss = replayAnalyzer.Misses[num];
             float radius = (float)miss.Radius;
             Pen circle = new Pen(Color.Gray, radius * 2 / scale)
             {
@@ -348,25 +338,25 @@ namespace OsuMissAnalyzer
                 Scale(area.Size, scale));
 
             int i, j, y, z;
-            for (y = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
-                y >= 0 && bounds.Contains(b.HitObjects[y].Location.ToPointF())
-                && miss.StartTime - b.HitObjects[y].StartTime < maxTime;
+            for (y = beatmap.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+                y >= 0 && bounds.Contains(beatmap.HitObjects[y].Location.ToPointF())
+                && miss.StartTime - beatmap.HitObjects[y].StartTime < maxTime;
                 y--)
             {
             }
-            for (z = b.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
-                z < b.HitObjects.Count && bounds.Contains(b.HitObjects[z].Location.ToPointF())
-                && b.HitObjects[z].StartTime - miss.StartTime < maxTime;
+            for (z = beatmap.HitObjects.Count(x => x.StartTime <= miss.StartTime) - 1;
+                z < beatmap.HitObjects.Count && bounds.Contains(beatmap.HitObjects[z].Location.ToPointF())
+                && beatmap.HitObjects[z].StartTime - miss.StartTime < maxTime;
                 z++)
             {
             }
-            for (i = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[y + 1].StartTime);
+            for (i = r.ReplayFrames.Count(x => x.Time <= beatmap.HitObjects[y + 1].StartTime);
                 i > 0 && bounds.Contains(r.ReplayFrames[i].PointF)
                 && miss.StartTime - r.ReplayFrames[i].Time < maxTime;
                 i--)
             {
             }
-            for (j = r.ReplayFrames.Count(x => x.Time <= b.HitObjects[z - 1].StartTime);
+            for (j = r.ReplayFrames.Count(x => x.Time <= beatmap.HitObjects[z - 1].StartTime);
                 j < r.ReplayFrames.Count - 1 && bounds.Contains(r.ReplayFrames[j].PointF)
                 && r.ReplayFrames[j].Time - miss.StartTime < maxTime;
                 j++)
@@ -375,10 +365,10 @@ namespace OsuMissAnalyzer
             p.Color = Color.Gray;
             for (int q = z - 1; q > y; q--)
             {
-                int c = Math.Min(255, 100 + (int)(Math.Abs(b.HitObjects[q].StartTime - miss.StartTime) * 100 / maxTime));
-                if (b.HitObjects[q].Type == HitObjectType.Slider)
+                int c = Math.Min(255, 100 + (int)(Math.Abs(beatmap.HitObjects[q].StartTime - miss.StartTime) * 100 / maxTime));
+                if (beatmap.HitObjects[q].Type == HitObjectType.Slider)
                 {
-                    SliderObject slider = (SliderObject)b.HitObjects[q];
+                    SliderObject slider = (SliderObject)beatmap.HitObjects[q];
                     PointF[] pt = new PointF[sliderGranularity];
                     for (int x = 0; x < sliderGranularity; x++)
                     {
@@ -394,13 +384,13 @@ namespace OsuMissAnalyzer
                 if (ring)
                 {
                     graphics.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(
-                        PSub(b.HitObjects[q].Location.ToPointF(), bounds, hardrock),
+                        PSub(beatmap.HitObjects[q].Location.ToPointF(), bounds, hardrock),
                         new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
                 }
                 else
                 {
                     graphics.FillEllipse(p.Brush, ScaleToRect(new RectangleF(PointF.Subtract(
-                        PSub(b.HitObjects[q].Location.ToPointF(), bounds, hardrock),
+                        PSub(beatmap.HitObjects[q].Location.ToPointF(), bounds, hardrock),
                         new SizeF(radius, radius).ToSize()), new SizeF(radius * 2, radius * 2)), bounds));
                 }
             }
@@ -409,7 +399,7 @@ namespace OsuMissAnalyzer
             {
                 PointF p1 = PSub(r.ReplayFrames[k].PointF, bounds, hardrock);
                 PointF p2 = PSub(r.ReplayFrames[k + 1].PointF, bounds, hardrock);
-                p.Color = GetHitColor(b.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
+                p.Color = GetHitColor(beatmap.OverallDifficulty, (int)(miss.StartTime - r.ReplayFrames[k].Time));
                 graphics.DrawLine(p, ScaleToRect(p1, bounds), ScaleToRect(p2, bounds));
                 if (distance > 10 && Math.Abs(miss.StartTime - r.ReplayFrames[k + 1].Time) > 50)
                 {
@@ -432,7 +422,7 @@ namespace OsuMissAnalyzer
                 {
                     distance += new Point2(p1.X - p2.X, p1.Y - p2.Y).Length;
                 }
-                if (re.GetKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
+                if (replayAnalyzer.GetKey(k == 0 ? ReplayAPI.Keys.None : r.ReplayFrames[k - 1].Keys, r.ReplayFrames[k].Keys) > 0)
                 {
                     graphics.DrawEllipse(p, ScaleToRect(new RectangleF(PointF.Subtract(p1, new Size(3, 3)), new Size(6, 6)),
                         bounds));
@@ -441,9 +431,9 @@ namespace OsuMissAnalyzer
 
             p.Color = Color.Black;
             Font f = new Font(FontFamily.GenericSansSerif, 12);
-            graphics.DrawString(b.ToString(), f, p.Brush, 0, 0);
-            if (all) graphics.DrawString("Object " + (num + 1) + " of " + b.HitObjects.Count, f, p.Brush, 0, f.Height);
-            else graphics.DrawString("Miss " + (num + 1) + " of " + re.Misses.Count, f, p.Brush, 0, f.Height);
+            graphics.DrawString(beatmap.ToString(), f, p.Brush, 0, 0);
+            if (all) graphics.DrawString("Object " + (num + 1) + " of " + beatmap.HitObjects.Count, f, p.Brush, 0, f.Height);
+            else graphics.DrawString("Miss " + (num + 1) + " of " + replayAnalyzer.Misses.Count, f, p.Brush, 0, f.Height);
             TimeSpan ts = TimeSpan.FromMilliseconds(miss.StartTime);
             graphics.DrawString("Time: " + ts.ToString(@"mm\:ss\.fff"), f, p.Brush, 0, area.Height - f.Height);
             return img;
@@ -572,8 +562,12 @@ namespace OsuMissAnalyzer
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.mainCanvas = new System.Windows.Forms.PictureBox();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.menuKit = new System.Windows.Forms.ToolStripMenuItem();
+            this.newReplayEntry = new System.Windows.Forms.ToolStripMenuItem();
             this.tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).BeginInit();
+            this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -581,33 +575,64 @@ namespace OsuMissAnalyzer
             this.tableLayoutPanel1.ColumnCount = 2;
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.Controls.Add(this.menuStrip1, 0, 0);
             this.tableLayoutPanel1.Controls.Add(this.mainCanvas, 0, 1);
-            this.tableLayoutPanel1.Location = new System.Drawing.Point(2, 0);
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(1, 2);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
             this.tableLayoutPanel1.RowCount = 2;
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 3.197158F));
-            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 96.80284F));
-            this.tableLayoutPanel1.Size = new System.Drawing.Size(381, 563);
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 4.460967F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 95.53903F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 61F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(381, 559);
             this.tableLayoutPanel1.TabIndex = 0;
             // 
             // mainCanvas
             // 
             this.tableLayoutPanel1.SetColumnSpan(this.mainCanvas, 2);
-            this.mainCanvas.Location = new System.Drawing.Point(3, 21);
+            this.mainCanvas.Location = new System.Drawing.Point(3, 27);
             this.mainCanvas.Name = "mainCanvas";
-            this.mainCanvas.Size = new System.Drawing.Size(375, 539);
+            this.mainCanvas.Size = new System.Drawing.Size(375, 529);
             this.mainCanvas.TabIndex = 0;
             this.mainCanvas.TabStop = false;
             this.mainCanvas.Click += new System.EventHandler(this.MainCanvas_Click);
+            // 
+            // menuStrip1
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.menuStrip1, 2);
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.menuKit});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Size = new System.Drawing.Size(381, 24);
+            this.menuStrip1.TabIndex = 1;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // menuKit
+            // 
+            this.menuKit.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.newReplayEntry});
+            this.menuKit.Name = "menuKit";
+            this.menuKit.Size = new System.Drawing.Size(61, 20);
+            this.menuKit.Text = "Options";
+            // 
+            // newReplayEntry
+            // 
+            this.newReplayEntry.Name = "newReplayEntry";
+            this.newReplayEntry.Size = new System.Drawing.Size(180, 22);
+            this.newReplayEntry.Text = "New replay...";
             // 
             // MissAnalyzer
             // 
             this.ClientSize = new System.Drawing.Size(384, 561);
             this.Controls.Add(this.tableLayoutPanel1);
+            this.MainMenuStrip = this.menuStrip1;
             this.Name = "MissAnalyzer";
             this.Load += new System.EventHandler(this.MissAnalyzer_Load);
             this.tableLayoutPanel1.ResumeLayout(false);
+            this.tableLayoutPanel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).EndInit();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -618,7 +643,6 @@ namespace OsuMissAnalyzer
             img = new Bitmap(area.Width, area.Height);
             graphics = Graphics.FromImage(img);
             mainCanvas.Image = img;
-            // graphicsOut = Graphics.FromImage(mainCanvas.Image);
             
         }
 
