@@ -164,9 +164,9 @@ namespace ReplayAPI
             {
                 int lastTime = 0;
                 using (MemoryStream codedStream = LZMACoder.Decompress(replayReader.BaseStream as FileStream))
-                using (StreamReader sr = new StreamReader(codedStream))
+                using (StreamReader streamReader = new StreamReader(codedStream))
                 {
-                    foreach (string frame in sr.ReadToEnd().Split(','))
+                    foreach (string frame in streamReader.ReadToEnd().Split(','))
                     {
                         if (string.IsNullOrEmpty(frame))
                             continue;
