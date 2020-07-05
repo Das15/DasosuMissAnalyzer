@@ -20,10 +20,10 @@ namespace OsuMissAnalyzer
 #endif
                 ConfigFileCheck();
                 Debug.Print("Starting MissAnalyser... ");
-                String replay = null, beatmap = null;
+                String replayPath = null, beatmap = null;
                 if (args.Length > 0 && args[0].EndsWith(".osr"))
                 {
-                    replay = args[0];
+                    replayPath = args[0];
                     Debug.Print("Found [{0}]", args[0]);
                     if (args.Length > 1 && args[1].EndsWith(".osu"))
                     {
@@ -33,9 +33,9 @@ namespace OsuMissAnalyzer
                 }
                 else if (args.Length > 1 && args[1].EndsWith(".osr"))  // Necessary to support drag & drop
                 {
-                    replay = args[1];
+                    replayPath = args[1];
                 }
-                MissAnalyzer missAnalyzer = new MissAnalyzer(replay, beatmap);       
+                MissAnalyzer missAnalyzer = new MissAnalyzer(replayPath, beatmap);       
                 missAnalyzer.InitializeComponent();
                 Application.Run(missAnalyzer);
 #if !DEBUG

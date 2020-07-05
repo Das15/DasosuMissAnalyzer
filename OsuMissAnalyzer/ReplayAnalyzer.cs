@@ -183,7 +183,6 @@ namespace osuDodgyMomentsFinder
 						k2 = true;
 				}
 
-				//k1
 				if (k1 && frame.Keys.HasFlag(Keys.K1))
 				{
 					k1_timer += frame.TimeDiff;
@@ -196,7 +195,6 @@ namespace osuDodgyMomentsFinder
 					k1_timer = 0;
 				}
 
-				//k2
 				if (k2 && frame.Keys.HasFlag(Keys.K2))
 				{
 					k2_timer += frame.TimeDiff;

@@ -42,9 +42,8 @@ namespace ReplayAPI
         private bool headerLoaded;
         public bool FullLoaded { get; private set; }
 
-        public Replay(string replayFile, bool fullLoad, bool calculateSpeed)
+        public Replay(string replayFile, bool fullLoad, bool calculateSpeed = true)
         {
-            calculateSpeed = true;
             Filename = replayFile;
             using (replayReader = new BinaryReader(new FileStream(replayFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
             {

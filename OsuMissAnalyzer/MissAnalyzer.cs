@@ -60,7 +60,7 @@ namespace OsuMissAnalyzer
             }
             else
             {
-                r = new Replay(replayFile, true, false);
+                r = new Replay(replayFile, true);
             }
             Debug.Print("Loaded replay {0}", r.Filename);
             Debug.Print("Amount of 300s: {0}", r.Count300);
@@ -103,7 +103,7 @@ namespace OsuMissAnalyzer
                                 .GetFiles().Where(f => f.Name.EndsWith("osr"))
                                 .OrderByDescending(f => f.LastWriteTime)
                                 .First().FullName,
-                                true, false);
+                                true);
                 }
             }
             if(r == null)
@@ -115,7 +115,7 @@ namespace OsuMissAnalyzer
                     DialogResult d = fileDialog.ShowDialog();
                     if (d == DialogResult.OK)
                     {
-                        r = new Replay(fileDialog.FileName, true, false);
+                        r = new Replay(fileDialog.FileName, true);
                     }
                 }
             }
@@ -561,13 +561,13 @@ namespace OsuMissAnalyzer
         public void InitializeComponent()
         {
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.mainCanvas = new System.Windows.Forms.PictureBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.menuKit = new System.Windows.Forms.ToolStripMenuItem();
             this.newReplayEntry = new System.Windows.Forms.ToolStripMenuItem();
+            this.mainCanvas = new System.Windows.Forms.PictureBox();
             this.tableLayoutPanel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).BeginInit();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).BeginInit();
             this.SuspendLayout();
             // 
             // tableLayoutPanel1
@@ -585,16 +585,6 @@ namespace OsuMissAnalyzer
             this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 61F));
             this.tableLayoutPanel1.Size = new System.Drawing.Size(381, 559);
             this.tableLayoutPanel1.TabIndex = 0;
-            // 
-            // mainCanvas
-            // 
-            this.tableLayoutPanel1.SetColumnSpan(this.mainCanvas, 2);
-            this.mainCanvas.Location = new System.Drawing.Point(3, 27);
-            this.mainCanvas.Name = "mainCanvas";
-            this.mainCanvas.Size = new System.Drawing.Size(375, 529);
-            this.mainCanvas.TabIndex = 0;
-            this.mainCanvas.TabStop = false;
-            this.mainCanvas.Click += new System.EventHandler(this.MainCanvas_Click);
             // 
             // menuStrip1
             // 
@@ -621,6 +611,16 @@ namespace OsuMissAnalyzer
             this.newReplayEntry.Size = new System.Drawing.Size(180, 22);
             this.newReplayEntry.Text = "New replay...";
             // 
+            // mainCanvas
+            // 
+            this.tableLayoutPanel1.SetColumnSpan(this.mainCanvas, 2);
+            this.mainCanvas.Location = new System.Drawing.Point(3, 27);
+            this.mainCanvas.Name = "mainCanvas";
+            this.mainCanvas.Size = new System.Drawing.Size(375, 529);
+            this.mainCanvas.TabIndex = 0;
+            this.mainCanvas.TabStop = false;
+            this.mainCanvas.Click += new System.EventHandler(this.MainCanvas_Click);
+            // 
             // MissAnalyzer
             // 
             this.ClientSize = new System.Drawing.Size(384, 561);
@@ -630,9 +630,9 @@ namespace OsuMissAnalyzer
             this.Load += new System.EventHandler(this.MissAnalyzer_Load);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).EndInit();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.mainCanvas)).EndInit();
             this.ResumeLayout(false);
 
         }
