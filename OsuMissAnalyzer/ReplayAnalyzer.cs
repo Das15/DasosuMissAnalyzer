@@ -31,6 +31,32 @@ namespace osuDodgyMomentsFinder
 		private List<SpinnerObject> Spinners { get; }
 		private List<ClickFrame> ExtraHits { get; }
 
+		public ReplayAnalyzer(Beatmap beatmap, Replay replay)
+		{
+			this.beatmap = beatmap;
+			this.replay = replay;
+
+			if (!replay.FullLoaded)
+				throw new Exception(replay.Filename + " IS NOT FULL");
+
+			multiplier = replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1;
+			circleRadius = beatmap.HitObjects[0].Radius;
+			hitTimeWindow = CalcTimeWindow(beatmap.OverallDifficulty);
+
+			Hits = new List<HitFrame>();
+			AttemptedHits = new List<HitFrame>();
+			Misses = new List<CircleObject>();
+			EffortlessMisses = new List<CircleObject>();
+			ExtraHits = new List<ClickFrame>();
+			Breaks = new List<BreakEvent>();
+			Spinners = new List<SpinnerObject>();
+
+			SelectBreaks();
+			SelectSpinners();
+			AssociateHits();
+			Debug.Print(MainInfo().ToString());
+		}
+
 		private void ApplyHardrock()
 		{
 			replay.Flip();
@@ -390,32 +416,6 @@ namespace osuDodgyMomentsFinder
 		{ 
 			return -12 * OD + 259.5; 
 		}
-
-		public ReplayAnalyzer(Beatmap beatmap, Replay replay)
-		{
-			this.beatmap = beatmap;
-			this.replay = replay;
-
-			if (!replay.FullLoaded)
-				throw new Exception(replay.Filename + " IS NOT FULL");
-
-			multiplier = replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1;
-			circleRadius = beatmap.HitObjects[0].Radius;
-			hitTimeWindow = CalcTimeWindow(beatmap.OverallDifficulty);
-
-			Hits = new List<HitFrame>();
-			AttemptedHits = new List<HitFrame>();
-			Misses = new List<CircleObject>();
-			EffortlessMisses = new List<CircleObject>();
-			ExtraHits = new List<ClickFrame>();
-			Breaks = new List<BreakEvent>();
-			Spinners = new List<SpinnerObject>();
-
-			SelectBreaks();
-			SelectSpinners();
-			AssociateHits();
-		}
-
 
 		private double FindBestPixelHit() 
 		{ 

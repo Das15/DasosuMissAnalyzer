@@ -21,13 +21,13 @@ namespace OsuMissAnalyzer
         private const int sliderGranularity = 10;
         private const int maxTime = 1000;
         private float scale = 1;
-        private readonly Options options;
+        public readonly Options options;
         private Bitmap img;
         private Graphics graphics;
         // private Graphics graphicsOut;
         private ReplayAnalyzer replayAnalyzer;
-        private Replay replay;
-        private Beatmap beatmap;
+        public Replay replay;
+        public Beatmap beatmap;
         private int number = 0;
         private Rectangle area;
         private bool ring;
@@ -80,8 +80,9 @@ namespace OsuMissAnalyzer
             Debug.Print("Loaded beatmap {0}", this.beatmap.Filename);
             Debug.Print("Analyzing... ");
             Debug.Print("Amount of replay frames: " + replay.ReplayFrames.Count.ToString());
+
             replayAnalyzer = new ReplayAnalyzer(this.beatmap, replay);
-            Debug.Print(replayAnalyzer.MainInfo().ToString());
+
             if (replayAnalyzer.Misses.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -132,7 +133,6 @@ namespace OsuMissAnalyzer
                     }
                 }
             }
-            
         }
 
         private void LoadBeatmap()
@@ -143,18 +143,18 @@ namespace OsuMissAnalyzer
             }
             else
             {
-                beatmap = GetBeatmapFromHash(Directory.GetCurrentDirectory(), false);
+                beatmap = Program.GetBeatmapFromHash(Directory.GetCurrentDirectory(), this,false);
                 if (beatmap == null)
                 {
                     if (options.Settings.ContainsKey("songsdir"))
                     {
-                        beatmap = GetBeatmapFromHash(options.Settings["songsdir"]);
+                        beatmap = Program.GetBeatmapFromHash(options.Settings["songsdir"], this);
                     }
                     else if (options.Settings.ContainsKey("osudir")
                       && File.Exists(Path.Combine(options.Settings["osudir"], "Songs"))
                       )
                     {
-                        beatmap = GetBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"));
+                        beatmap = Program.GetBeatmapFromHash(Path.Combine(options.Settings["osudir"], "Songs"), this);
                     }
                     else
                     {
@@ -173,82 +173,11 @@ namespace OsuMissAnalyzer
             }
         }
 
-        private Beatmap GetBeatmapFromHash(string dir, bool songsDir = true)
-        {
-            Debug.Print("\nChecking API Key...");
-            JArray j = JArray.Parse("[]");
-            if (options.Settings.ContainsKey("apikey"))
-            {
-                Debug.Print("Found API key, searching for beatmap...");
+        
 
-                using (WebClient w = new WebClient())
-                {
-                    j = JArray.Parse(w.DownloadString("https://osu.ppy.sh/api/get_beatmaps" +
-                                                            "?k=" + options.Settings["apikey"] +
-                                                            "&h=" + replay.MapHash));
-                }
-            }
-            else
-            {
-                Debug.Print("No API key found, searching manually. It could take a while...");
-                Thread t = new Thread(() =>
-                               MessageBox.Show("No API key found, searching manually. It could take a while..."));
-            }
-            if (songsDir)
-            {
-                string[] folders;
+        
 
-                if (j.Count > 0) folders = Directory.GetDirectories(dir, j[0]["beatmapset_id"] + "*");
-                else folders = Directory.GetDirectories(dir);
-
-                foreach (string folder in folders)
-                {
-                    Beatmap map = ReadFolder(folder, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
-                    if (map != null) return map;
-                }
-            }
-            else
-            {
-                Beatmap map = ReadFolder(dir, j.Count > 0 ? (string)j[0]["beatmap_id"] : null);
-                if (map != null) return map;
-            }
-            return null;
-        }
-
-        private Beatmap ReadFolder(string folder, string id)
-        {
-            foreach (string file in Directory.GetFiles(folder, "*.osu"))
-            {
-                using (StreamReader f = new StreamReader(file))
-                {
-                    string line = f.ReadLine();
-                    if (line == null)
-                        continue;
-                    while (!f.EndOfStream
-                           && !line.StartsWith("BeatmapID"))
-                    {
-                        line = f.ReadLine();
-                    }
-                    if (line.StartsWith("BeatmapID") && id != null)
-                    {
-                        if (line.Substring(10) == id)
-                        {
-                            return new Beatmap(file);
-                        }
-                    }
-                    else
-                    {
-                        if (replay.MapHash == Beatmap.MD5FromFile(file))
-                        {
-                            return new Beatmap(file);
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        private void ScaleChange(int i)
+        public void ScaleChange(int i)
         {
             scale += 0.1f * i;
             if (scale < 0.1) scale = 0.1f;
