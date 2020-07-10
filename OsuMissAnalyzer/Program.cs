@@ -1,4 +1,5 @@
 ﻿using BMAPI.v1;
+using BMAPI.v1.Events;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -46,11 +47,20 @@ namespace OsuMissAnalyzer
             }
             catch (Exception e)
             {
+                if (e is FileNotFoundException)
+                {
+                    MessageBox.Show("uwu it works", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
                 MessageBox.Show("Error: " + e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string[] errorMessage = { "Message: " + e.Message, 
+                                          "Source: " + e.Source + ", " + e.TargetSite,
+                                          "Exception: " + e.InnerException,
+                                          "Stacktrace: " + e.StackTrace };
+                File.WriteAllLines("error.txt", errorMessage);
             }
 #endif
         }
-        public static Beatmap GetBeatmapFromHash(string dir, MissAnalyzer missAnalyzer, bool songsDir = true)
+        public static Beatmap GetBeatmapFromHash(string dir, MissAnalyzer missAnalyzer, bool songsdir = true)
         {
             Debug.Print("\nChecking API Key...");
             JArray apiString = JArray.Parse("[]");
@@ -71,7 +81,7 @@ namespace OsuMissAnalyzer
                 Thread t = new Thread(() =>
                                MessageBox.Show("No API key found, searching manually. It could take a while..."));
             }
-            if (songsDir)
+            if (songsdir)
             {
                 string[] folders;
 

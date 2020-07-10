@@ -11,7 +11,7 @@ namespace ReplayAPI
 {
     public class Replay : IDisposable
     {
-        // for customizing which replays to flip
+        // For customizing which replays to flip
         public bool AxisFlip { get; set; }
         public List<ReplayFrame> Times { get; private set; }
 

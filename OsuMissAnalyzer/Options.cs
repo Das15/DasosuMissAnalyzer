@@ -6,17 +6,27 @@ namespace OsuMissAnalyzer
 	public class Options
 	{
 		public Dictionary<string, string> Settings { get; private set; }
-		public Options(string file)
+        private string Path { get; set; }
+        public Options(string file)
 		{
+			this.Path = file;
 			Settings = new Dictionary<string, string>();
-			using (StreamReader f = new StreamReader(file))
+			using (StreamReader streamReader = new StreamReader(Path))
 			{
-				while (!f.EndOfStream)
+				while (!streamReader.EndOfStream)
 				{
-					string[] s = f.ReadLine().Trim().Split(new char[] { '=' }, 2);
-					if(s[1].Length > 0) Settings.Add(s[0].ToLower(), s[1]);
+					string[] entry = streamReader.ReadLine().Trim().Split(new char[] { '=' }, 2);
+					if(entry[1].Length > 0) Settings.Add(entry[0].ToLower(), entry[1]);
 				}
 			}
 		}
+		public bool AddEntry(string entry, string value)
+        {
+			using (StreamWriter streamWriter = new StreamWriter(Path, true))
+				streamWriter.WriteLine("{0}={1}", entry, value);
+
+			Settings.Add(entry, value);
+			return true;
+        }
 	}
 }

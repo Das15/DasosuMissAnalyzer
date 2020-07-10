@@ -33,7 +33,7 @@ namespace osuDodgyMomentsFinder
             res += hit <= 1 ? "" : " ATTEMPTED";
             res += " HIT at " + Frame.Time + "ms";
             res += " (" + (Frame.Time - Note.StartTime) + "ms error, " + hit + " perfectness)";
-            //res += "(" + frame.keyCounter + ")";
+            res += "(" + Frame.KeyCounter + ")";
 
             return res;
         }

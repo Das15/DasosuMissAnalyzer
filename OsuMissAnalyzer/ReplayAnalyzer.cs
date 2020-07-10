@@ -105,7 +105,7 @@ namespace osuDodgyMomentsFinder
 
 				if (note.Type.HasFlag(HitObjectType.Spinner))
 					continue;
-
+					
 				for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
 				{
 					var frame = replay.ReplayFrames[j];
@@ -461,9 +461,6 @@ namespace osuDodgyMomentsFinder
 
 			return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
 		}
-
-
-		// private double ur = -1;
 
 		private double UnstableRate()
 		{

@@ -17,17 +17,17 @@ namespace OsuMissAnalyzer
 {
     public class MissAnalyzer : Form
     {
+        public readonly Options options;
+        public Replay replay;
+        public Beatmap beatmap;
+
         private const int arrowLength = 4;
         private const int sliderGranularity = 10;
         private const int maxTime = 1000;
         private float scale = 1;
-        public readonly Options options;
         private Bitmap img;
         private Graphics graphics;
-        // private Graphics graphicsOut;
         private ReplayAnalyzer replayAnalyzer;
-        public Replay replay;
-        public Beatmap beatmap;
         private int number = 0;
         private Rectangle area;
         private bool ring;
@@ -39,16 +39,16 @@ namespace OsuMissAnalyzer
         private ToolStripMenuItem newReplayEntry;
         private OsuDatabase database;
 
-        
-        
-
         public MissAnalyzer(string replayFile, string beatmap)
         {
             options = new Options("options.cfg");
-            if(options.Settings.ContainsKey("osudir"))
+            if(!options.Settings.ContainsKey("osudir"))
             {
-                database = new OsuDatabase(options, "osu!.db");
+                CreateConfig();
+                replay = new Replay(options.Settings["osudir"], true);
+                if (replay == null) throw new NullReferenceException();
             }
+            database = new OsuDatabase(options, "osu!.db");
             Text = "Miss Analyzer";
 
             FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -91,6 +91,26 @@ namespace OsuMissAnalyzer
                 Environment.Exit(1);
             }
         }
+        private void CreateConfig()
+        {
+            bool isPathChosen = false;
+            while (!isPathChosen)
+            {
+                using (FolderBrowserDialog fileDialog = new FolderBrowserDialog())
+                {
+                    fileDialog.Description = "Choose the main osu! directory";
+                    DialogResult dialogResult = fileDialog.ShowDialog();
+                    if (dialogResult == DialogResult.OK)
+                    {
+                        string osuDir = fileDialog.SelectedPath;
+                        string songsDir = osuDir + "\\Songs";
+                        options.AddEntry("osudir", osuDir);
+                        options.AddEntry("songsdir", songsDir);
+                        isPathChosen = true;
+                    }
+                }
+            }
+        }
         private void LoadNewReplay()
         {
             database.Close();
@@ -108,7 +128,13 @@ namespace OsuMissAnalyzer
         {
             if(options.Settings.ContainsKey("osudir"))
             {
-                if (MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                bool dialogResult = false;
+                if (replay == null)
+                {
+                    dialogResult =
+                    MessageBox.Show("Analyze latest replay?", "Miss Analyzer", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+                }
+                if (dialogResult)
                 {
                     replay = new Replay(
                             new DirectoryInfo(
@@ -173,10 +199,6 @@ namespace OsuMissAnalyzer
             }
         }
 
-        
-
-        
-
         public void ScaleChange(int i)
         {
             scale += 0.1f * i;
@@ -189,67 +211,23 @@ namespace OsuMissAnalyzer
             Invalidate();
             ScaleChange(Math.Sign(e.Delta));
         }
-
-        protected override void OnKeyDown(KeyEventArgs e)
+        protected void SaveMissImages()
         {
-            base.OnKeyDown(e);
-            Invalidate();
-            switch (e.KeyCode)
+            for (int i = 0; i < replayAnalyzer.Misses.Count; i++)
             {
-                case System.Windows.Forms.Keys.Up:
-                    ScaleChange(1);
-                    break;
-                case System.Windows.Forms.Keys.Down:
-                    ScaleChange(-1);
-                    break;
-                case System.Windows.Forms.Keys.Right:
-                    if (number == replayAnalyzer.Misses.Count - 1) break;
-                    number++;
-                    break;
-                case System.Windows.Forms.Keys.Left:
-                    if (number == 0) break;
-                    number--;
-                    break;
-                case System.Windows.Forms.Keys.T:
-                    ring = !ring;
-                    break;
-                case System.Windows.Forms.Keys.P:
-                    for (int i = 0; i < replayAnalyzer.Misses.Count; i++)
-                    {
-                        if (all) DrawMiss(beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[i]));
-                        else DrawMiss(i);
-                        img.Save(replay.Filename.Substring(replay.Filename.LastIndexOf("\\") + 1,
-                                 replay.Filename.Length - 5 - replay.Filename.LastIndexOf("\\"))
-                                 + "." + i + ".png",
-                            System.Drawing.Imaging.ImageFormat.Png);
-                    }
-                    break;
-                case System.Windows.Forms.Keys.R:
-                    LoadNewReplay();
-                    if (replay == null || beatmap == null)
-                        throw new ArgumentNullException("replay or beatmap", "Has been not set in LoadNewReplay method.");
-                    break;
-                case System.Windows.Forms.Keys.A:
-                    if (all)
-                    {
-                        all = false;
-                        number = replayAnalyzer.Misses.Count(x => x.StartTime < beatmap.HitObjects[number].StartTime);
-                    }
-                    else
-                    {
-                        all = true;
-                        number = beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[number]);
-                    }
-                    break;
+                if (all) DrawMiss(beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[i]));
+                else DrawMiss(i);
+                string path = replay.Filename.Substring(replay.Filename.LastIndexOf("\\") + 1,
+                         replay.Filename.Length - 5 - replay.Filename.LastIndexOf("\\"))
+                         + "." + i + ".png";
+                img.Save(path,
+                    System.Drawing.Imaging.ImageFormat.Png);
+                Debug.Print("Saved {0} miss to {1}", i, path);
             }
+            MessageBox.Show("The images have been saved to the drive.", "Miss Analyzer", MessageBoxButtons.OK, MessageBoxIcon.Question);
         }
 
-        protected override void OnPaint(PaintEventArgs e)
-        {
-            base.OnPaint(e);
-            // graphicsOut.DrawImage(DrawMiss(number), area);
-            mainCanvas.Image = DrawMiss(number);
-        }
+        
 
         /// <summary>
         /// Draws the miss.
@@ -547,6 +525,7 @@ namespace OsuMissAnalyzer
             this.newReplayEntry.Name = "newReplayEntry";
             this.newReplayEntry.Size = new System.Drawing.Size(180, 22);
             this.newReplayEntry.Text = "New replay...";
+            this.newReplayEntry.Click += new System.EventHandler(this.NewReplayEntry_Click);
             // 
             // mainCanvas
             // 
@@ -573,7 +552,51 @@ namespace OsuMissAnalyzer
             this.ResumeLayout(false);
 
         }
-
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            Invalidate();
+            switch (e.KeyCode)
+            {
+                case System.Windows.Forms.Keys.Up:
+                    ScaleChange(1);
+                    break;
+                case System.Windows.Forms.Keys.Down:
+                    ScaleChange(-1);
+                    break;
+                case System.Windows.Forms.Keys.Right:
+                    if (number == replayAnalyzer.Misses.Count - 1) break;
+                    number++;
+                    break;
+                case System.Windows.Forms.Keys.Left:
+                    if (number == 0) break;
+                    number--;
+                    break;
+                case System.Windows.Forms.Keys.T:
+                    ring = !ring;
+                    break;
+                case System.Windows.Forms.Keys.P:
+                    SaveMissImages();
+                    break;
+                case System.Windows.Forms.Keys.R:
+                    LoadNewReplay();
+                    if (replay == null || beatmap == null)
+                        throw new ArgumentNullException("replay or beatmap", "Has been not set in LoadNewReplay method.");
+                    break;
+                case System.Windows.Forms.Keys.A:
+                    if (all)
+                    {
+                        all = false;
+                        number = replayAnalyzer.Misses.Count(x => x.StartTime < beatmap.HitObjects[number].StartTime);
+                    }
+                    else
+                    {
+                        all = true;
+                        number = beatmap.HitObjects.IndexOf(replayAnalyzer.Misses[number]);
+                    }
+                    break;
+            }
+        }
         private void MissAnalyzer_Load(object sender, EventArgs e)
         {
             area = mainCanvas.ClientRectangle;
@@ -583,9 +606,20 @@ namespace OsuMissAnalyzer
             
         }
 
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            mainCanvas.Image = DrawMiss(number);
+        }
+
         private void MainCanvas_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void NewReplayEntry_Click(object sender, EventArgs e)
+        {
+            LoadNewReplay();
         }
     }
 }
