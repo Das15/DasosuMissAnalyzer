@@ -2,3 +2,4 @@ TODO:
 
 - Error handling for config
 - The access to most functions in top bar
+- Error handing during load error

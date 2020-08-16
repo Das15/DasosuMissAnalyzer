@@ -49,7 +49,7 @@ namespace OsuMissAnalyzer
             {
                 if (e is FileNotFoundException)
                 {
-                    MessageBox.Show("uwu it works", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // MessageBox.Show("uwu it works", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 MessageBox.Show("Error: " + e.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 string[] errorMessage = { "Message: " + e.Message, 

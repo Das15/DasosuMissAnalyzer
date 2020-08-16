@@ -148,14 +148,18 @@ namespace OsuMissAnalyzer
                 {
                     using (OpenFileDialog fileDialog = new OpenFileDialog())
                     {
+                        DialogResult d;
                         fileDialog.Title = "Choose replay file";
                         fileDialog.Filter = "osu! replay files (*.osr)|*.osr";
-                        DialogResult d = fileDialog.ShowDialog();
-                        if (d == DialogResult.OK)
+                        do
                         {
-                            replay = new Replay(fileDialog.FileName, true);
-                        }
-                        if (replay == null) throw new NullReferenceException();
+                            d = fileDialog.ShowDialog();
+                            if (d == DialogResult.OK)
+                            {
+                                replay = new Replay(fileDialog.FileName, true);
+                            }
+                        } while (d != DialogResult.OK);
+                            if (replay == null) throw new NullReferenceException();
                     }
                 }
             }
