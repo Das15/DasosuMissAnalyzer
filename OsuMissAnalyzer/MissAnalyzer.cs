@@ -71,7 +71,11 @@ namespace OsuMissAnalyzer
             if (beatmap == null)
             {
                 LoadBeatmap();
-                if (this.beatmap == null) Environment.Exit(1);
+                if (this.beatmap == null)
+                {
+                    MessageBox.Show("Cannot find the beatmap for the replay.", "Beatmap not found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    Environment.Exit(1);
+                }
             }
             else
             {
