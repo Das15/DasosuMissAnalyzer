@@ -43,21 +43,14 @@ namespace OsuMissAnalyzer
         {
             options = new Options("options.cfg");
             if(!options.Settings.ContainsKey("osudir"))
-            {
                 CreateConfig();
-                replay = new Replay(options.Settings["osudir"], true);
-                if (replay == null) throw new NullReferenceException();
-            }
             database = new OsuDatabase(options, "osu!.db");
             Text = "Miss Analyzer";
-
             FormBorderStyle = FormBorderStyle.FixedSingle;
+
             Debug.Print("Loading Replay file...");
-            if (replayFile == null)
-            {
-                LoadReplay();
-                if (replay == null) Environment.Exit(1);
-            }
+            LoadReplay();
+            if (replay == null) Environment.Exit(-1);
             else
             {
                 replay = new Replay(replayFile, true);
