@@ -51,10 +51,7 @@ namespace OsuMissAnalyzer
             Debug.Print("Loading Replay file...");
             LoadReplay();
             if (replay == null) Environment.Exit(-1);
-            else
-            {
-                replay = new Replay(replayFile, true);
-            }
+
             Debug.Print("Loaded replay {0}", replay.Filename);
             Debug.Print("Amount of 300s: {0}", replay.Count300);
             Debug.Print("Amount of 100s: {0}", replay.Count100);
